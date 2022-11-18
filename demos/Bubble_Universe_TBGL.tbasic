@@ -1,0 +1,87 @@
+﻿'
+' Experiment derived from excellent code posted by Paul Dunn
+'
+' Use keys suggested in Windows title to alter the visualization
+'
+
+uses "tbgl"
+
+%WINDOW_EDGE  = 1024
+
+function tbMain()
+     
+  number n = 10
+  number n_step = 1
+  number r = (2*m_pi)/235
+  number x, y, u, v, t
+  number sz = %WINDOW_EDGE/640*300
+  number sw = %WINDOW_EDGE/sz
+  number sh = %WINDOW_EDGE/sz
+  number rgb_max = 255
+  number rgb_normalizer = rgb_max/n
+
+  ' -- Create and show window
+  dWord hWnd = tbgl_createWindowEx("Bubble Universe, inspired by Paul Dunn", %WINDOW_EDGE, %WINDOW_EDGE, 32, %TBGL_WS_WINDOWED | %TBGL_WS_CLOSEBOX)
+  tbgl_showWindow
+
+  tbgl_pointSize 3
+  tbgl_useDepthMask false
+  
+  long  blendFlag  = false
+  dword renderMode = %GL_POINTS
+  tbgl_useBlend blendFlag
+
+  ' -- Main loop
+  while tbgl_isWindow(hWnd) 
+    
+    tbgl_clearFrame 
+      tbgl_renderMatrix2D(-sw, -sh, sw, sh)
+
+      tbgl_beginpoly renderMode
+        for i as long = 0 to n step n_step
+          for j as long = 0 to n step n_step
+            u = sin(i+v) + sin(r*i+x)
+            v = cos(i+v) + cos(r*i+x)
+            x = u + t
+            tbgl_color i*rgb_normalizer, j*rgb_normalizer, 99*rgb_normalizer
+            tbgl_vertex u, v
+          next
+        next
+      tbgl_endPoly
+      
+      t += 0.025
+
+    tbgl_drawFrame 
+
+    ' -- Application controls
+    if tbgl_getWindowKeyState(hWnd, %VK_ESCAPE) then exit while
+
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F1) then renderMode = %GL_POINTS
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F2) then renderMode = %GL_LINES
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F3) then renderMode = %GL_TRIANGLES
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F4) then renderMode = %GL_POLYGON
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F5) then renderMode = %GL_LINE_STRIP
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F6) then renderMode = %GL_TRIANGLE_STRIP
+    if tbgl_getWindowKeyOnce(hWnd, %VK_F12) then
+      blendFlag = not blendFlag
+      tbgl_useBlend blendFlag
+      
+    end if  
+    
+    if tbgl_getWindowKeyOnce(hWnd, %VK_PGUP) then n = cycle_next(n, 10, 200, 10)
+    if tbgl_getWindowKeyOnce(hWnd, %VK_PGDN) then n = cycle_prev(n, 10, 200, 10)
+    
+    rgb_normalizer = rgb_max/n
+    
+    if tbgl_getWindowKeyOnce(hWnd, %VK_HOME) then rgb_max = cycle_next(rgb_max, 10, 255, 5)
+    if tbgl_getWindowKeyOnce(hWnd, %VK_END) then rgb_max = cycle_prev(rgb_max, 10, 255, 5)
+
+    if tbgl_getWindowKeyOnce(hWnd, %VK_UP) then n_step = cycle_next(n_step, 1, 20, 1)
+    if tbgl_getWindowKeyOnce(hWnd, %VK_DOWN) then n_step = cycle_prev(n_step, 1, 20, 1)
+    
+    tbgl_setWindowTitle(hWnd, "Bubble Universe, inspired by Paul Dunn, try F1-F6 keys, n="+format$(n)+" (PageUp, PageDown), n_step="+format$(n_step)+" (Up, Down), rgb max: "+format$(rgb_Max)+" (Home/End), blending: "+iif$(blendFlag, "ON", "OFF")+" (F12)")
+
+  wend
+
+  tbgl_destroyWindow
+end function
