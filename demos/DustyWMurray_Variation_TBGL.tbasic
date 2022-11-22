@@ -1,0 +1,110 @@
+﻿'
+' Study of shape posted by Dusty W Murray on Basic Programming Language group
+'
+
+uses "tbgl"
+
+function tbMain()
+     
+  ' -- Create and show window
+  dWord hWnd = tbgl_createWindowEx("Experiment derived from excellent code posted by Dusty W Murray", 1024, 1024, 32, %TBGL_WS_WINDOWED | %TBGL_WS_CLOSEBOX)
+  tbgl_showWindow
+
+  ' -- Defaults
+  tbgl_pointSize 2
+  
+  ' -- Control variables
+  single modifier, stars
+  long   s
+  single a, x, y, sar, sas
+
+  single frameRate
+  single timerito
+  
+  ' -- Main loop  
+  while tbgl_isWindow(hWnd) 
+
+    frameRate = tbgl_getFrameRate
+    
+    ' -- Calculations
+    timerito += 1/frameRate
+    modifier  = 11 + sin(timerito)*10
+
+    ' -- Cache geometry to slot 1
+    tbgl_newList 1
+      tbgl_pushMatrix
+
+        tbgl_scale 0.01
+        tbgl_beginpoly %TBGL_POINTS
+          for s = 10 to 150 step 10
+          
+            tbgl_color 128+sin(timer)*125,s,128+cos(timer)*125
+          
+            for a = 0 to 2 * m_pi step 3 / (s * 2 * m_pi)
+              sar = sin(sas + a * stars) * s / modifier
+           
+              x = sin(a) * (s + sar)
+              y = cos(a) * (s + sar)
+              
+              tbgl_vertex x, s*4, y
+            next
+            
+            sas += 0.4
+          next
+      
+          if timerito > 9 then
+            timerito = 0
+            stars += 1
+          end if
+          
+        tbgl_endPoly
+      tbgl_popMatrix
+    tbgl_endList
+    
+    ' -- Rendering
+    tbgl_clearFrame
+    
+      ' Viewport top left
+      tbgl_viewport(0,0,0.5,0.5)
+    
+      tbgl_camera 6, 10, 6,
+                  0,  3, 0
+                   
+      tbgl_callList 1
+      
+      ' Viewport top right
+      tbgl_ResetMatrix
+      tbgl_viewport(0.5,0,0.5,0.5)
+    
+      tbgl_camera  0, 15,  0,
+                   0,  0,  0.1
+                   
+      tbgl_callList 1
+      
+      ' Viewport left bottom
+      tbgl_ResetMatrix
+      tbgl_viewport(0,0.5,0.5,0.5)
+    
+      tbgl_camera  1, 5, 0,
+                   1, 0, 0.1
+                   
+      tbgl_callList 1
+      
+      ' Viewport bottom right
+      tbgl_ResetMatrix
+      tbgl_viewport(0.5,0.5,0.5,0.5)
+    
+      tbgl_camera  0, 3, 10,
+                   0, 3, 0
+                   
+      tbgl_callList 1
+       
+    tbgl_drawFrame
+
+    ' -- Application controls
+    if tbgl_getWindowKeyState(hWnd, %VK_ESCAPE) then exit while
+    
+  wend
+
+  tbgl_destroyWindow
+end function
