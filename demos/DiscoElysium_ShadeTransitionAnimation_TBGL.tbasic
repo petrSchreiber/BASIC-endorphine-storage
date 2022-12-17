@@ -1,0 +1,99 @@
+﻿' Code for shade transition in 6:51 to 6:55 in https://www.youtube.com/watch?v=U1Q-IgHnuWs
+
+uses "tbgl", "math"
+
+#include "offscreenrenderer/offScreenRenderer8b.tbasicu" ' -- Get v2.1 from https://github.com/petrSchreiber/offScreenRenderer/releases/tag/v2.1
+
+' Quick setup for easy adjustment in IDE
+%TARGET_WIDTH  = 1920
+%TARGET_HEIGHT = 1080
+
+%ANIMATION_FPS          = 50
+%ANIMATION_DURATION_SEC = 4.7 as single
+%ANIMATION_TOTAL_FRAMES = %ANIMATION_FPS * %ANIMATION_DURATION_SEC
+
+function tbMain()
+  double frameRate
+  long   width, height
+                        
+  ' -- Create and show window
+  dWord hWnd = tbgl_createWindowEx("Shade overlay rendering - press ESC to quit", 640, 360, 32, %TBGL_WS_WINDOWED | %TBGL_WS_CLOSEBOX)
+  tbgl_showWindow
+  
+  tbgl_getWindowClient(hWnd, width, height)
+    
+  dim osr as offScreenRenderer8b
+  osr.buildBuffer(%TARGET_WIDTH, %TARGET_HEIGHT)
+
+  enableOrderIndependentDrawing()
+  
+  long   frameCounter = -1
+  string frameFileName
+  
+  while tbgl_isWindow(hWnd) 
+    
+    incr frameCounter
+    tbgl_setWindowTitle(hwnd, $("{frameCounter} / {%ANIMATION_TOTAL_FRAMES}"))
+    
+    ' -- Prepare the single frame of animation
+    osr.beginRender()
+      drawSlidingShadow(width, height, frameCounter, %ANIMATION_TOTAL_FRAMES)
+    osr.endRender()
+    
+    osr.drawFrame()     ' -- Show the rendered frame
+    
+    ' -- Save it to disk
+    if frameCounter > 0 then
+      frameFileName = "frame_"+format$(frameCounter, "0000")+".png"
+      osr.saveImage(frameFileName)
+    end if
+   
+    ' -- ESCAPE key to exit application
+    if tbgl_getWindowKeyState(hWnd, %VK_ESCAPE) or frameCounter = %ANIMATION_TOTAL_FRAMES then exit while
+
+  wend 
+  
+  osr.releaseBuffer
+  tbgl_destroyWindow
+end function
+
+function enableOrderIndependentDrawing()
+  tbgl_depthFunc(%TBGL_ALWAYS)
+  tbgl_useDepthMask false
+  tbgl_useDepthflag false
+end function
+
+function drawSlidingShadow(width as long, height as long, frameCounter as long, videoTotalFrames as long)
+  
+  single rightTransitionEdge, rightScreenEdge
+  single rimSize = width/20
+
+  tbgl_rendermatrix2D (1, height, width, 1)   ' Set the resolution and the coordinate system
+  tbgl_clearFrame                             ' As we don't draw a full background, we need to clear the framebuffer
+
+  rightScreenEdge     = width
+  rightTransitionEdge = frameCounter / (videoTotalFrames) * (width + rimSize)
+  
+  tbgl_beginPoly %GL_QUADS
+    tbgl_color 255, 255, 255                ' Left part
+    tbgl_vertex 0, 0
+    tbgl_vertex rightTransitionEdge, 0
+    tbgl_vertex rightTransitionEdge, height
+    tbgl_vertex 0, height
+
+    tbgl_color 0, 0, 0                      ' Right part
+    tbgl_vertex rightTransitionEdge, 0
+    tbgl_vertex rightScreenEdge, 0
+    tbgl_vertex rightScreenEdge, height
+    tbgl_vertex rightTransitionEdge, height
+    
+    tbgl_color 255, 255, 255                 ' Transition
+    tbgl_vertex rightTransitionEdge-rimSize-sin((frameCounter)/10)*rimSize*0.5, 0
+    tbgl_color 0,0,0
+    tbgl_vertex rightTransitionEdge, 0
+    tbgl_vertex rightTransitionEdge, height
+    tbgl_color 255, 255, 255
+    tbgl_vertex rightTransitionEdge-rimSize-sin((frameCounter+15)/10)*rimSize*0.5, height
+  tbgl_endPoly
+
+end function
